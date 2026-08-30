@@ -117,7 +117,7 @@ python -m spotify.podcasts
 
 Abra o arquivo `frontend_spotify.html` diretamente no navegador (duplo clique), ou use a extensão **Live Server** do VSCode.
 
-<img width="591" height="572" alt="Captura de tela 2026-08-30 183739" src="https://github.com/user-attachments/assets/5e284c61-91f9-4fc5-a452-0a574adce044" />
+<img width="1912" height="958" alt="Captura de tela 2026-08-30 183739" src="https://github.com/user-attachments/assets/5e284c61-91f9-4fc5-a452-0a574adce044" />
 
 ---
 
