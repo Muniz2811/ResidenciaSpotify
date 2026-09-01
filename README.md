@@ -611,7 +611,7 @@ A organização do trabalho foi baseada na divisão de responsabilidades, integr
 
 ---
 
-## 👨‍💻 Ricardo
+## 👨‍💻 Ricardo Correa Ribeiro
 
 **Papel:** Desenvolvimento de Software e Integração
 
