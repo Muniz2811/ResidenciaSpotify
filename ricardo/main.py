@@ -5,6 +5,12 @@ Residência em IA — UnB
 Execute: python main.py
 """
 
+import sys
+
+# Evita falhas com os símbolos usados na demonstração em terminais Windows.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from spotify.dados import load_data
 from spotify.top5 import get_top5
 from spotify.recomendador import search_track, recommend_similar, get_user_profile_recommendations

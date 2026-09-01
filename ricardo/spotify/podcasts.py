@@ -26,8 +26,9 @@ def get_podcasts(min_duration=20, genre=None, n=20):
     df = df.sort_values(['duration_min', 'popularity'], ascending=[False, False])
 
     return df[[
-        'track_name', 'artists', 'duration_min',
-        'speechiness', 'track_genre', 'popularity'
+        'track_id', 'track_name', 'artists', 'duration_min',
+        'speechiness', 'track_genre', 'genre_main', 'popularity',
+        'mood', 'is_explicit'
     ]].head(n).reset_index(drop=True)
 
 

@@ -24,7 +24,7 @@ def get_top5(exclude_explicit=False, genre=None):
         df = df[df['genre_main'] == genre.lower()]
 
     top = df.nlargest(5, 'popularity')[[
-        'track_name', 'artists', 'popularity', 'mood',
+        'track_id', 'track_name', 'artists', 'popularity', 'mood',
         'genre_main', 'duration_min', 'is_explicit', 'track_genre'
     ]].reset_index(drop=True)
 

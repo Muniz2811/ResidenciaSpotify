@@ -17,7 +17,7 @@ def load_data(path='dataset_clean.csv'):
     global _df, _matrix
     _df = pd.read_csv(path)
     _matrix = _df[FEATURES_SCALED].values
-    print(f"✅ Dataset carregado: {len(_df):,} músicas | {_df['track_genre'].nunique()} gêneros")
+    print(f"[OK] Dataset carregado: {len(_df):,} músicas | {_df['track_genre'].nunique()} gêneros")
     return _df
 
 def get_df():

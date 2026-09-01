@@ -54,7 +54,7 @@ def build_playlist(genre=None, mood=None, n=20, exclude_explicit=False):
     result = result.sort_values('energy', ascending=True)
 
     return result[[
-        'track_name', 'artists', 'popularity', 'mood',
+        'track_id', 'track_name', 'artists', 'popularity', 'mood',
         'energy', 'danceability', 'duration_min',
         'is_explicit', 'genre_main'
     ]].reset_index(drop=True)

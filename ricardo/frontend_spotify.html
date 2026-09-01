@@ -99,7 +99,7 @@
   .track-list { display: flex; flex-direction: column; gap: 2px; }
   .track-row {
     display: grid; align-items: center;
-    grid-template-columns: 28px 1fr auto auto;
+    grid-template-columns: 28px 1fr auto auto auto;
     gap: 12px; padding: 8px 12px; border-radius: var(--radius);
     cursor: pointer; transition: background .1s;
   }
@@ -123,6 +123,17 @@
     background: var(--text3); color: #000; font-size: 9px; font-weight: 700;
     padding: 1px 4px; border-radius: 2px; margin-left: 6px; vertical-align: middle;
   }
+  .track-actions { display: flex; align-items: center; gap: 5px; }
+  .track-action {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--bg4);
+    background: transparent; color: var(--text2); cursor: pointer;
+  }
+  .track-action:hover, .track-action.favorite { color: var(--green); border-color: var(--green); }
+  .api-status { margin-left: auto; color: var(--text3); font-size: 12px; }
+  .api-status.error { color: #ff6b6b; }
+  .empty-state { padding: 32px; text-align: center; color: var(--text3); background: var(--bg2); border-radius: var(--radius); }
+  .profile-card { background: var(--bg2); padding: 20px; border-radius: 10px; margin-bottom: 24px; }
+  .profile-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 
   /* ── CARDS GRID ── */
   .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -284,6 +295,10 @@
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm5.3 11c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V22h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"/></svg>
     Podcasts
   </div>
+  <div class="nav-item" onclick="goTo('profile',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    Meu Perfil <span id="favorite-count" style="margin-left:auto;color:var(--green)">0</span>
+  </div>
 
   <span class="nav-label">Gêneros</span>
   <div class="nav-item" onclick="setGenre('pop');goTo('playlist',document.querySelector('[onclick*=playlist]'))">
@@ -297,10 +312,10 @@
   </div>
 
   <div class="stats-box">
-    <strong>89.740</strong>
+    <strong id="stats-tracks">—</strong>
     músicas analisadas
-    <div style="margin-top:10px"><strong>114</strong> gêneros</div>
-    <div style="margin-top:10px"><strong>Fase 3</strong> — Frontend</div>
+    <div style="margin-top:10px"><strong id="stats-genres">—</strong> gêneros</div>
+    <div style="margin-top:10px"><strong>API</strong> — Integrada</div>
   </div>
 </aside>
 
@@ -311,7 +326,7 @@
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       <input class="search-input" id="searchInput" type="text" placeholder="Buscar músicas ou artistas..." oninput="handleSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';handleSearch('')}">
     </div>
-
+    <span id="api-status" class="api-status">Conectando à API…</span>
   </div>
 
   <div class="content">
@@ -323,9 +338,9 @@
         <div class="hero-info" style="flex:1">
           <div class="hero-type">Dataset · Spotify · Residência IA</div>
           <div class="hero-title">Top músicas<br>do mundo</div>
-          <div class="hero-meta"><span>89.740</span> faixas analisadas · <span>114</span> gêneros · <span>Cosine Similarity</span></div>
+          <div class="hero-meta"><span id="hero-tracks">—</span> faixas analisadas · <span id="hero-genres">—</span> gêneros · <span>Cosine Similarity</span></div>
         </div>
-        <button class="play-btn" onclick="nowPlay('Unholy (feat. Kim Petras)','Sam Smith')">
+        <button class="play-btn" id="hero-play">
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
       </div>
@@ -336,7 +351,7 @@
 
       <div style="margin-top:36px; margin-bottom:12px">
         <div class="section-title">Perfil emocional do catálogo</div>
-        <div class="section-sub">Distribuição por valência × energia — 89.740 músicas</div>
+      <div class="section-sub" id="mood-subtitle">Distribuição por valência × energia</div>
       </div>
       <div class="mood-grid" id="mood-grid"></div>
 
@@ -348,22 +363,22 @@
         <div class="card" onclick="setGenre('pop');goTo('playlist',document.querySelectorAll('.nav-item')[2])">
           <div class="card-cover" style="background:#1a1a3a;color:#7b9ef4">Pop</div>
           <div class="card-title">Pop</div>
-          <div class="card-sub">7.094 faixas</div>
+          <div class="card-sub" id="count-pop">— faixas</div>
         </div>
         <div class="card" onclick="setGenre('samba');goTo('playlist',document.querySelectorAll('.nav-item')[2])">
           <div class="card-cover" style="background:#3a1a00;color:#f4a020">Samba</div>
           <div class="card-title">Samba</div>
-          <div class="card-sub">817 faixas</div>
+          <div class="card-sub" id="count-samba">— faixas</div>
         </div>
         <div class="card" onclick="setGenre('sertanejo');goTo('playlist',document.querySelectorAll('.nav-item')[2])">
           <div class="card-cover" style="background:#2a1a00;color:#d4843a">Sertanejo</div>
           <div class="card-title">Sertanejo</div>
-          <div class="card-sub">890 faixas</div>
+          <div class="card-sub" id="count-sertanejo">— faixas</div>
         </div>
         <div class="card" onclick="goTo('podcasts',document.querySelectorAll('.nav-item')[3])">
           <div class="card-cover" style="background:#1a2a1a;color:#4caf7d">🎙️</div>
           <div class="card-title">Podcasts</div>
-          <div class="card-sub">940 faixas longas</div>
+          <div class="card-sub" id="count-podcasts">— faixas sinalizadas</div>
         </div>
       </div>
     </section>
@@ -373,7 +388,7 @@
       <div class="section-title">🔍 Descobrir músicas similares</div>
       <div class="section-sub">Escolha uma referência e o sistema encontra músicas com perfil sonoro parecido usando Cosine Similarity</div>
 
-      <div style="margin-bottom:20px; display:flex; gap:12px; flex-wrap:wrap">
+      <div id="recommendation-seeds" style="margin-bottom:20px; display:flex; gap:12px; flex-wrap:wrap">
         <button class="filter-btn active" onclick="loadRecs(0,this)">Unholy · Sam Smith</button>
         <button class="filter-btn" onclick="loadRecs(1,this)">Mas Que Nada · Sérgio Mendes</button>
         <button class="filter-btn" onclick="loadRecs(2,this)">Problemão · Hugo & Vitor</button>
@@ -394,6 +409,24 @@
 
       <div class="section-title" style="font-size:16px;margin-bottom:12px">Músicas similares encontradas</div>
       <div class="track-list" id="rec-list"></div>
+    </section>
+
+    <!-- ══ PERFIL DO USUÁRIO ══ -->
+    <section class="section" id="sec-profile">
+      <div class="section-title">♥ Recomendações para você</div>
+      <div class="section-sub">Favorite músicas no catálogo e recalcule seu perfil com o motor Python.</div>
+      <div class="profile-card">
+        <div id="profile-summary" style="font-size:16px;font-weight:700">Nenhuma favorita selecionada</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:5px">As favoritas ficam salvas neste navegador.</div>
+        <div class="profile-actions">
+          <button class="filter-btn active" onclick="generateProfileRecommendations()">Recalcular recomendações</button>
+          <button class="filter-btn" onclick="clearFavorites()">Limpar favoritas</button>
+        </div>
+      </div>
+      <div class="section-title" style="font-size:16px;margin-bottom:12px">Suas favoritas</div>
+      <div class="track-list" id="favorite-list"></div>
+      <div class="section-title" style="font-size:16px;margin:28px 0 12px">Recomendadas pelo seu perfil</div>
+      <div class="track-list" id="profile-rec-list"></div>
     </section>
 
     <!-- ══ PLAYLIST ══ -->
@@ -440,7 +473,7 @@
     <!-- ══ PODCASTS ══ -->
     <section class="section" id="sec-podcasts">
       <div class="section-title">🎙️ Podcasts & Faixas Longas</div>
-      <div class="section-sub">Faixas com mais de 20 minutos ou alta presença de fala (speechiness > 0.66) · 940 faixas identificadas</div>
+      <div class="section-sub" id="podcast-subtitle">Faixas com mais de 20 minutos ou alta presença de fala</div>
       <div id="pod-list"></div>
     </section>
 
@@ -453,7 +486,7 @@
     <div class="np-name" id="np-name">Nenhuma música selecionada</div>
     <div class="np-artist" id="np-artist" style="display:flex;align-items:center;gap:6px">
       <span>Clique em uma faixa para selecionar</span>
-      <span style="background:var(--bg4);color:var(--text3);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600">ILUSTRATIVO</span>
+      <span style="background:var(--bg4);color:var(--text3);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600">CATÁLOGO</span>
     </div>
   </div>
   <div class="np-controls">
@@ -473,304 +506,6 @@
   </div>
 </div>
 
-<script>
-// ── DATA ──
-const DATA = {
-  top5: [
-    {track_name:"Unholy (feat. Kim Petras)",artists:"Sam Smith;Kim Petras",popularity:100,mood:"Triste 🔵",is_explicit:false},
-    {track_name:"Quevedo: Bzrp Music Sessions, Vol. 52",artists:"Bizarrap;Quevedo",popularity:99,mood:"Animado 🟡",is_explicit:false},
-    {track_name:"La Bachata",artists:"Manuel Turizo",popularity:98,mood:"Animado 🟡",is_explicit:false},
-    {track_name:"I'm Good (Blue)",artists:"David Guetta;Bebe Rexha",popularity:98,mood:"Intenso 🔴",is_explicit:true},
-    {track_name:"Me Porto Bonito",artists:"Bad Bunny;Chencho Corleone",popularity:97,mood:"Intenso 🔴",is_explicit:true}
-  ],
-  playlists: {
-    pop: [
-      {track_name:"I'm Good (Blue)",artists:"David Guetta;Bebe Rexha",popularity:98,mood:"Intenso 🔴",is_explicit:true},
-      {track_name:"As It Was",artists:"Harry Styles",popularity:95,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Glimpse of Us",artists:"Joji",popularity:94,mood:"Triste 🔵",is_explicit:false},
-      {track_name:"Another Love",artists:"Tom Odell",popularity:93,mood:"Intenso 🔴",is_explicit:false},
-      {track_name:"Calm Down",artists:"Rema;Selena Gomez",popularity:92,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Blinding Lights",artists:"The Weeknd",popularity:91,mood:"Intenso 🔴",is_explicit:false},
-      {track_name:"Running Up That Hill",artists:"Kate Bush",popularity:90,mood:"Intenso 🔴",is_explicit:false},
-      {track_name:"MIDDLE OF THE NIGHT",artists:"Elley Duhé",popularity:90,mood:"Intenso 🔴",is_explicit:false}
-    ],
-    samba: [
-      {track_name:"Mas Que Nada",artists:"Sérgio Mendes;Black Eyed Peas",popularity:64,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Impossível Te Esquecer - Ao Vivo",artists:"Caju Pra Baixo",popularity:57,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Problema Emocional / Volta de Vez Pra Mim",artists:"Samba De Dom",popularity:56,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Contrato Vitalício - Ao Vivo",artists:"Akatu;Ferrugem",popularity:55,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Já é - Ao vivo",artists:"Jorge Aragão",popularity:55,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Meu Plano Falhou",artists:"Akatu",popularity:54,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Carolina",artists:"Seu Jorge",popularity:53,mood:"Intenso 🔴",is_explicit:false},
-      {track_name:"Só por um Momento - Ao Vivo",artists:"Akatu;Grupo Revelação",popularity:53,mood:"Animado 🟡",is_explicit:false}
-    ],
-    sertanejo: [
-      {track_name:"Problemão - Ao Vivo",artists:"Hugo & Vitor;Clayton & Romário",popularity:62,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Meu Anjo / Esqueça Que Eu Te Amo",artists:"Murilo Huff",popularity:62,mood:"Intenso 🔴",is_explicit:false},
-      {track_name:"Sentimentalmente Esperto - Ao Vivo",artists:"Henrique & Juliano",popularity:62,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Amores De Esquina - Ao Vivo",artists:"Juan Marcus & Vinícius",popularity:60,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Coração De Rua - Ao Vivo",artists:"Henrique & Juliano",popularity:60,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Quase Recaída",artists:"João Bosco & Vinicius",popularity:60,mood:"Animado 🟡",is_explicit:false},
-      {track_name:"Vestido De Seda",artists:"Teodoro & Sampaio",popularity:60,mood:"Relaxado 🟢",is_explicit:false},
-      {track_name:"Sem Rede - Ao Vivo",artists:"Henrique & Juliano",popularity:59,mood:"Intenso 🔴",is_explicit:false}
-    ]
-  },
-  recs: [
-    [
-      {track_name:"I Know You (feat. Bastille) - Vigiland Remix",artists:"Craig David;Bastille",popularity:59,mood:"Triste 🔵",sim:0.973},
-      {track_name:"Hypocrite",artists:"Jok'air",popularity:37,mood:"Intenso 🔴",sim:0.966,is_explicit:true},
-      {track_name:"jaded",artists:"sadeyes",popularity:62,mood:"Triste 🔵",sim:0.965,is_explicit:true},
-      {track_name:"11:11",artists:"Yung Pinch",popularity:34,mood:"Intenso 🔴",sim:0.951,is_explicit:true},
-      {track_name:"Metas e Versos",artists:"DJ Roger Vale;Zack Vox",popularity:40,mood:"Intenso 🔴",sim:0.939},
-      {track_name:"Seven Nation Army",artists:"The White Stripes",popularity:84,mood:"Intenso 🔴",sim:0.930}
-    ],
-    [
-      {track_name:"Girl From Ipanema",artists:"Stan Getz;João Gilberto",popularity:60,mood:"Relaxado 🟢",sim:0.961},
-      {track_name:"Aquarela do Brasil",artists:"Gal Costa",popularity:52,mood:"Animado 🟡",sim:0.944},
-      {track_name:"Garota de Ipanema",artists:"Tom Jobim",popularity:55,mood:"Relaxado 🟢",sim:0.937},
-      {track_name:"Carolina",artists:"Seu Jorge",popularity:53,mood:"Intenso 🔴",sim:0.921},
-      {track_name:"Samba de Uma Nota Só",artists:"Baden Powell",popularity:48,mood:"Animado 🟡",sim:0.908},
-      {track_name:"Desafinado",artists:"João Gilberto",popularity:51,mood:"Relaxado 🟢",sim:0.895}
-    ],
-    [
-      {track_name:"Coração De Rua",artists:"Henrique & Juliano",popularity:60,mood:"Animado 🟡",sim:0.988},
-      {track_name:"Quase Recaída",artists:"João Bosco & Vinicius",popularity:60,mood:"Animado 🟡",sim:0.981},
-      {track_name:"Vestido De Seda",artists:"Teodoro & Sampaio",popularity:60,mood:"Relaxado 🟢",sim:0.975},
-      {track_name:"Amores De Esquina",artists:"Juan Marcus & Vinícius",popularity:60,mood:"Animado 🟡",sim:0.969},
-      {track_name:"Sem Rede - Ao Vivo",artists:"Henrique & Juliano",popularity:59,mood:"Intenso 🔴",sim:0.958},
-      {track_name:"Recaída",artists:"Gusttavo Lima",popularity:58,mood:"Triste 🔵",sim:0.944}
-    ]
-  ],
-  recRefs: [
-    {name:"Unholy (feat. Kim Petras)",artist:"Sam Smith · dance · Triste 🔵",pop:100},
-    {name:"Mas Que Nada",artist:"Sérgio Mendes · samba · Animado 🟡",pop:64},
-    {name:"Problemão - Ao Vivo",artist:"Hugo & Vitor · sertanejo · Animado 🟡",pop:62}
-  ],
-  podcasts: [
-    {track_name:"Unity (Voyage Mix) Pt. 1",artists:"Tale Of Us",duration_min:87.3,track_genre:"minimal-techno"},
-    {track_name:"Crossing Wires 002 - Continuous DJ Mix",artists:"Timo Maas",duration_min:79.8,track_genre:"breakbeat"},
-    {track_name:"The Lab 03 - Continuous DJ Mix Part 1",artists:"Seth Troxler",duration_min:78.8,track_genre:"detroit-techno"},
-    {track_name:"Amnesia Ibiza Underground 10 DJ Mix",artists:"Loco Dice",duration_min:76.1,track_genre:"minimal-techno"},
-    {track_name:"House of Om - Mark Farina - Continuous Mix",artists:"Mark Farina",duration_min:74.1,track_genre:"chicago-house"},
-    {track_name:"Live In Tokyo - Continuous Mix",artists:"Mark Farina",duration_min:72.3,track_genre:"chicago-house"}
-  ],
-  moods: {"Animado 🟡":33220,"Intenso 🔴":30211,"Triste 🔵":19030,"Relaxado 🟢":7279}
-};
-
-// ── STATE ──
-let curGenre = 'pop', curMood = 'todos', curRec = 0, playing = false;
-
-// ── HELPERS ──
-function moodClass(m) {
-  if (m.includes('🟡')) return 'mood-a';
-  if (m.includes('🔴')) return 'mood-i';
-  if (m.includes('🔵')) return 'mood-t';
-  return 'mood-r';
-}
-function trackRow(t, i, showSim) {
-  const exp = t.is_explicit ? '<span class="explicit-tag">E</span>' : '';
-  const sim = showSim && t.sim ? `<span style="font-size:12px;color:var(--text3)">sim ${t.sim.toFixed(3)}</span>` : `<span class="track-pop">${t.popularity}</span>`;
-  return `<div class="track-row" onclick="nowPlay('${t.track_name.replace(/'/g,"\\'")}','${t.artists.split(';')[0].replace(/'/g,"\\'")}')">
-    <span class="track-num">${i}</span>
-    <div class="track-info">
-      <div class="track-name">${t.track_name}${exp}</div>
-      <div class="track-artist">${t.artists.replace(/;/g,' · ')}</div>
-    </div>
-    <span class="mood-badge ${moodClass(t.mood)}">${t.mood}</span>
-    ${sim}
-  </div>`;
-}
-
-// ── RENDER ──
-function renderTop5() {
-  document.getElementById('top5-list').innerHTML =
-    DATA.top5.map((t,i) => trackRow(t, i+1, false)).join('');
-}
-
-function renderMoods() {
-  const total = Object.values(DATA.moods).reduce((a,b)=>a+b,0);
-  const cfg = [
-    {key:"Animado 🟡", color:"#f4c20d", label:"Animado"},
-    {key:"Intenso 🔴", color:"#ff6b6b", label:"Intenso"},
-    {key:"Triste 🔵",  color:"#5ba3f5", label:"Triste"},
-    {key:"Relaxado 🟢",color:"#4caf7d", label:"Relaxado"}
-  ];
-  document.getElementById('mood-grid').innerHTML = cfg.map(c => {
-    const n = DATA.moods[c.key], pct = (n/total*100).toFixed(1);
-    return `<div class="mood-card">
-      <div>
-        <div class="mood-label">${c.label}</div>
-        <div class="mood-count">${n.toLocaleString('pt-BR')} músicas · ${pct}%</div>
-        <div class="mood-bar-wrap"><div class="mood-bar" style="width:${pct}%;background:${c.color}"></div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderRecs(idx) {
-  curRec = idx;
-  const ref = DATA.recRefs[idx];
-  document.getElementById('ref-name').textContent = ref.name;
-  document.getElementById('ref-artist').textContent = ref.artist;
-  document.getElementById('ref-card').querySelector('[style*="28px"]').textContent = ref.pop;
-  document.getElementById('rec-list').innerHTML =
-    DATA.recs[idx].map((t,i) => trackRow(t, i+1, true)).join('');
-}
-
-function renderPlaylist() {
-  const hideExp = document.getElementById('chk-explicit').checked;
-  let list = DATA.playlists[curGenre] || [];
-  if (curMood !== 'todos') list = list.filter(t => t.mood === curMood);
-  if (hideExp) list = list.filter(t => !t.is_explicit);
-  const el = document.getElementById('playlist-list');
-  if (list.length === 0) {
-    el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma música encontrada com esses filtros.<br>Tente outro gênero ou humor.</div>';
-    return;
-  }
-  el.innerHTML = list.map((t,i) => trackRow(t, i+1, false)).join('');
-}
-
-function renderPodcasts() {
-  const icons = ['🎧','🎚️','🎛️','🔊','🎶','🎵'];
-  document.getElementById('pod-list').innerHTML =
-    DATA.podcasts.map((p,i) => `
-      <div class="pod-row" onclick="nowPlay('${p.track_name.replace(/'/g,"\\'")}','${p.artists.replace(/'/g,"\\'")}')">
-        <div class="pod-cover">${icons[i%icons.length]}</div>
-        <div>
-          <div class="pod-name">${p.track_name}</div>
-          <div class="pod-meta">${p.artists} · ${p.track_genre}</div>
-        </div>
-        <div class="pod-dur">${p.duration_min.toFixed(0)} min</div>
-      </div>`).join('');
-}
-
-// ── NAVIGATION ──
-function goTo(id, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('sec-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (el) el.classList.add('active');
-}
-
-function setPill(el, genre) {
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  if (genre !== 'todos') { setGenre(genre); goTo('playlist', document.querySelectorAll('.nav-item')[2]); }
-}
-
-function setGenre(g, el) {
-  curGenre = g;
-  document.querySelectorAll('#genre-filters .filter-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  else {
-    document.querySelectorAll('#genre-filters .filter-btn').forEach(b => {
-      if (b.textContent.toLowerCase().includes(g)) b.classList.add('active');
-    });
-  }
-  renderPlaylist();
-}
-
-function setMood(m, el) {
-  curMood = m;
-  document.querySelectorAll('#mood-filters .filter-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  renderPlaylist();
-}
-
-function loadRecs(idx, el) {
-  document.querySelectorAll('[onclick^="loadRecs"]').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  renderRecs(idx);
-}
-
-// ── SEARCH ──
-// Todos os dados pesquisáveis reunidos em uma lista plana
-const ALL_TRACKS = [
-  ...DATA.top5,
-  ...DATA.playlists.pop,
-  ...DATA.playlists.samba,
-  ...DATA.playlists.sertanejo,
-  ...DATA.recs[0], ...DATA.recs[1], ...DATA.recs[2],
-  ...DATA.podcasts.map(p => ({track_name: p.track_name, artists: p.artists, popularity: p.popularity || 0, mood: '🎙️ Podcast', is_explicit: false, duration_min: p.duration_min}))
-];
-
-// Remove duplicatas por track_name + artists
-const SEARCH_INDEX = [];
-const seen = new Set();
-for (const t of ALL_TRACKS) {
-  const key = (t.track_name + '|' + t.artists).toLowerCase();
-  if (!seen.has(key)) { seen.add(key); SEARCH_INDEX.push(t); }
-}
-
-function handleSearch(q) {
-  const query = q.trim().toLowerCase();
-
-  // Campo vazio → volta para home
-  if (query.length === 0) {
-    goTo('home', document.querySelector('.nav-item.active') || document.querySelectorAll('.nav-item')[0]);
-    return;
-  }
-
-  // Menos de 2 chars → aguarda mais digitação
-  if (query.length < 2) return;
-
-  // Filtra por nome da música OU artista
-  const results = SEARCH_INDEX.filter(t =>
-    t.track_name.toLowerCase().includes(query) ||
-    t.artists.toLowerCase().includes(query)
-  );
-
-  // Navega para a seção de busca sem alterar o nav ativo visualmente
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('sec-busca').classList.add('active');
-
-  const sub = document.getElementById('search-sub');
-  const list = document.getElementById('search-list');
-
-  if (results.length === 0) {
-    sub.textContent = `Nenhum resultado para "${q}" nos dados do frontend`;
-    list.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3)">
-      Não encontrado nos dados carregados.<br>
-      <span style="font-size:12px;margin-top:8px;display:block">
-        O frontend exibe uma amostra do dataset. Para busca completa nas 89.740 músicas,
-        use o motor Python (módulo recomendador.py).
-      </span>
-    </div>`;
-    return;
-  }
-
-  sub.textContent = `${results.length} resultado${results.length > 1 ? 's' : ''} para "${q}"`;
-  list.innerHTML = results.slice(0, 20).map((t, i) => trackRow(t, i+1, false)).join('');
-}
-
-function clearSearch() {
-  document.getElementById('searchInput').value = '';
-  goTo('home', document.querySelectorAll('.nav-item')[0]);
-  document.querySelectorAll('.nav-item')[0].classList.add('active');
-}
-
-// ── NOW PLAYING ──
-function nowPlay(name, artist) {
-  document.getElementById('np-name').textContent = name;
-  document.getElementById('np-artist').innerHTML =
-    `<span>${artist}</span><span style="background:var(--bg4);color:var(--text3);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:6px">ILUSTRATIVO</span>`;
-  playing = true;
-  document.getElementById('np-play-btn').innerHTML =
-    '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-}
-function togglePlay() {
-  playing = !playing;
-  document.getElementById('np-play-btn').innerHTML = playing
-    ? '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
-    : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-}
-
-// ── INIT ──
-renderTop5();
-renderMoods();
-renderRecs(0);
-renderPlaylist();
-renderPodcasts();
-</script>
+<script src="/frontend_spotify.js" defer></script>
 </body>
 </html>
