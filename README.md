@@ -358,15 +358,6 @@ ResidenciaSpotify/
 │       ├── playlist.py
 │       └── podcasts.py
 │
-├── integrante_2/
-│   └── ...
-│
-├── integrante_3/
-│   └── ...
-│
-├── docs/
-│   └── ...
-│
 └── README.md
 ```
 
@@ -383,14 +374,6 @@ Inclui:
 * Dataset processado;
 * Módulos analíticos;
 * Sistema de recomendação.
-
-### `integrante_2/`
-
-Espaço destinado aos experimentos, notebooks e implementações desenvolvidas pelo segundo integrante.
-
-### `integrante_3/`
-
-Espaço destinado aos experimentos e implementações desenvolvidas pelo terceiro integrante.
 
 ### `docs/`
 
@@ -655,68 +638,58 @@ A documentação interativa da API está disponível em:
 
 # 🤝 Equipe e Metodologia
 
-O projeto foi desenvolvido de forma colaborativa durante a **Residência em Inteligência Artificial da Universidade de Brasília (UnB)**.
+O projeto foi desenvolvido de forma colaborativa durante a Residência em Inteligência Artificial da Universidade de Brasília (UnB).
 
 A organização do trabalho foi baseada na divisão de responsabilidades, integração dos módulos e entregas incrementais.
 
-## 👩‍💻 Maria Eduarda Denis Duarte Marques 
+---
 
-**Papel:** Documentação Técnica e Validação
+## 👩‍💻 Maria Eduarda, Emilly Costa e Luan Feres
 
-### Responsabilidades
+**Papel:** Documentação e Validação
 
-* Estruturação da documentação técnica;
-* Organização da arquitetura do repositório;
-* Elaboração dos guias de inicialização;
+**Responsabilidades**
+
+* Estruturação técnica da documentação (README, arquitetura do repositório);
 * Padronização da comunicação dos resultados;
-* Registro das descobertas analíticas;
 * Validação final da integração dos módulos.
 
 ---
 
-## 👤 Integrante 2
+## 👤 Ricardo C. Ribeiro
 
 **Papel:** Engenharia de Dados
 
-### Responsabilidades
+**Responsabilidades**
 
-* Desenvolvimento do pipeline de limpeza;
+* Limpeza dos dados;
 * Deduplicação do dataset;
-* Tratamento dos dados;
-* Engenharia de features;
-* Preparação dos dados para análise.
-
-> **Observação:** Substituir pelo nome real do integrante.
+* Análise exploratória;
+* Engenharia de features.
 
 ---
 
-## 👤 Integrante 3
+## 👤 Luiz Oryone
 
 **Papel:** Machine Learning
 
-### Responsabilidades
+**Responsabilidades**
 
-* Desenvolvimento do modelo de recomendação;
-* Modelagem matemática;
-* Implementação da Cosine Similarity;
-* Definição das features utilizadas;
-* Testes e validação do algoritmo.
-
-> **Observação:** Substituir pelo nome real do integrante.
+* Modelagem do sistema de recomendação;
+* Normalização das features;
+* Matemática vetorial aplicada ao modelo.
 
 ---
 
-## 👨‍💻 Ricardo Correa Ribeiro
+## 👨‍💻 Ricardo C. Ribeiro e Pedro Henrique Muniz
 
-**Papel:** Desenvolvimento de Software e Integração
+**Papel:** Software e Integração
 
-### Responsabilidades
+**Responsabilidades**
 
-* Desenvolvimento da interface frontend;
-* Integração entre frontend e backend;
-* Consolidação dos scripts;
-* Organização da estrutura final da aplicação;
-* Integração dos módulos desenvolvidos pela equipe.
+* Desenvolvimento do frontend da aplicação;
+* Consolidação dos scripts modulares;
+* Integração final entre os módulos desenvolvidos pela equipe.
 
 ---
 
