@@ -59,8 +59,10 @@ cd ResidenciaSpotify/ricardo
 
 ```
 ricardo/
+├── api.py                    ← API FastAPI e servidor do frontend
 ├── main.py                   ← Ponto de entrada — execute: python main.py
-├── frontend_spotify.html     ← Interface visual — abra no navegador
+├── frontend_spotify.html     ← Estrutura e estilos da interface
+├── frontend_spotify.js       ← Chamadas fetch e estado das favoritas
 ├── dataset_clean.csv         ← Dataset limpo (89.740 músicas × 34 colunas)
 ├── requirements.txt          ← Dependências Python
 ├── README.md                 ← Este arquivo
@@ -98,11 +100,19 @@ pip install -r requirements.txt
 
 As dependências são: `pandas`, `numpy` e `scikit-learn`.
 
-### 3. Executar o projeto completo
+### 3. Executar o projeto completo com frontend integrado
 
 ```bash
-python main.py
+python -m uvicorn api:app --reload
 ```
+
+Depois, acesse `http://127.0.0.1:8000`. O HTML deve ser aberto por esse
+endereço, e não diretamente pelo arquivo, porque agora ele consulta a API
+Python. A documentação interativa dos endpoints fica em
+`http://127.0.0.1:8000/docs`.
+
+O comando `python main.py` continua disponível para executar apenas a
+demonstração no terminal.
 
 ### 4. Testar módulos individualmente
 
@@ -115,7 +125,9 @@ python -m spotify.podcasts
 
 ### 5. Abrir o frontend
 
-Abra o arquivo `frontend_spotify.html` diretamente no navegador (duplo clique), ou use a extensão **Live Server** do VSCode.
+Com a API em execução, abra `http://127.0.0.1:8000` no navegador. O frontend
+consulta o catálogo completo, solicita recomendações por faixa e envia as
+favoritas do navegador para o perfil calculado no Python.
 
 <img width="1912" height="958" alt="Captura de tela 2026-08-30 183739" src="https://github.com/user-attachments/assets/5e284c61-91f9-4fc5-a452-0a574adce044" />
 
