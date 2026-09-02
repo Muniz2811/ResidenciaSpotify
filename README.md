@@ -107,88 +107,200 @@ Desenvolvimento de uma interface visual inspirada na experiência do Spotify, pe
 
 ---
 
-# ❓ Perguntas Orientadoras
+# Guiding Questions (GQs)
+## Perguntas Orientadoras Respondidas
 
-O desenvolvimento do SpotData foi guiado por perguntas relacionadas a **popularidade, comportamento do mercado musical, características sonoras e recomendação**.
+O desenvolvimento do SpotData foi guiado por perguntas relacionadas à popularidade, às características sonoras e à recomendação musical.
 
-Essas perguntas servem como direcionadores para as análises exploratórias e ajudam a transformar os dados disponíveis em hipóteses que podem ser investigadas.
-
----
-
-## 📈 1. Popularidade e Tendências de Mercado
-
-A popularidade é uma das principais variáveis disponíveis no dataset. A partir dela, buscamos entender quais características estão associadas ao sucesso das músicas.
-
-### Perguntas investigadas
-
-* **O que a média de popularidade realmente representa dentro do catálogo?**
-* **Músicas mais curtas tendem a apresentar maior popularidade?**
-* **Músicas explícitas possuem maior ou menor popularidade?**
-* **Devemos considerar músicas com popularidade zero nas análises ou elas podem representar um problema de qualidade dos dados?**
-* **A popularidade de um artista influencia mais o sucesso de uma música do que suas características sonoras?**
-* **A baixa popularidade de determinados gêneros, como músicas latinas, representa um fenômeno real ou pode estar relacionada à composição do dataset?**
-* **Remixes apresentam diferenças de popularidade em relação às versões originais?**
-* **Existe relação entre duração, gênero e popularidade?**
-* **Quais características musicais aparecem com maior frequência entre as músicas mais populares?**
-* **A popularidade está relacionada principalmente às características sonoras ou a fatores externos ao áudio?**
-
-> **Observação:** O dataset permite investigar associações entre essas variáveis, mas não necessariamente determinar relações de causa e efeito.
+As respostas abaixo representam associações observadas no dataset e o comportamento atual do sistema. Elas não demonstram necessariamente relações de causa e efeito.
 
 ---
 
-## 🎧 2. Perfil Emocional e Sensorial
+## 1. Popularidade
 
-As características sonoras também permitem investigar como diferentes propriedades de uma música podem estar relacionadas à percepção de humor, energia e contexto de consumo.
+### O que a média de popularidade representa dentro do catálogo?
 
-### Perguntas investigadas
+A popularidade média das 89.740 músicas é aproximadamente 33,21 (pontos), enquanto a mediana é 33 (pontos).
 
-* **Como podemos utilizar características sonoras para estimar se uma música possui um perfil mais feliz, triste, energético ou melancólico?**
-* **A combinação entre energia e valência é suficiente para representar o "humor" de uma música?**
-* **Músicas mais acústicas tendem a apresentar menor energia?**
-* **O nível de *acousticness* influencia a intensidade percebida de uma música?**
-* **O volume (*loudness*) está relacionado à energia de uma faixa?**
-* **Músicas muito rápidas são necessariamente mais adequadas para dançar?**
-* **Existe relação entre *danceability* e energia?**
-* **Uma música pode possuir alta *danceability* mesmo apresentando baixa energia?**
-* **Músicas acústicas são necessariamente mais adequadas para momentos tranquilos?**
-* **Uma música altamente acústica seria recomendada pelo sistema para uma festa?**
-* **Como diferentes combinações de características podem ser utilizadas para criar playlists para contextos específicos?**
+Isso indica que a maior parte do catálogo possui popularidade baixa ou intermediária. Apenas 3,49% das músicas apresentam uma popularidade igual ou superior a 70.
 
----
+### Músicas explícitas possuem maior ou menor popularidade?
 
-## 🤖 3. Recomendação e Inteligência Artificial
+- **Não explícitas:** 32,86 pontos
+- **Explícitas:** 36,89 pontos
+- **Diferença:** aproximadamente 4,03 pontos
 
-Além da análise exploratória, o projeto busca investigar como técnicas de Inteligência Artificial podem transformar as características musicais em recomendações.
+### Devemos considerar músicas com popularidade zero?
 
-### Perguntas investigadas
+O dataset possui 9.347 músicas com popularidade zero, correspondendo a aproximadamente 10,42% do catálogo limpo.
 
-* **É possível recomendar músicas apenas com base em suas características sonoras?**
-* **Duas músicas com características semelhantes necessariamente serão percebidas como semelhantes pelos usuários?**
-* **Quais características possuem maior influência na similaridade entre duas músicas?**
-* **A Cosine Similarity é adequada para encontrar músicas semelhantes nesse tipo de dataset?**
-* **O sistema consegue encontrar recomendações relevantes para músicas pouco populares?**
-* **Um perfil construído a partir das músicas favoritas consegue representar as preferências de um usuário?**
-* **Recomendações baseadas no perfil do usuário são diferentes das recomendações baseadas em uma única música?**
-* **Como equilibrar similaridade e diversidade nas recomendações?**
-* **É possível criar playlists personalizadas apenas utilizando características presentes no dataset?**
+Essas músicas não devem ser removidas automaticamente. O zero pode representar:
+
+- música pouco conhecida;
+- ausência de dados suficientes;
+- indisponibilidade do indicador;
+- popularidade registrada em momentos diferentes.
 
 ---
 
-## 🎶 4. Música, Contexto e Experiência
+## 2. Perfil Emocional e Sensorial
 
-Uma das propostas do SpotData é utilizar os dados para ir além da simples busca por músicas semelhantes.
+### Como utilizar características sonoras para estimar o humor de uma música?
 
-A partir das características analisadas, investigamos possibilidades como:
+O SpotData utiliza `energy` e `valence` para dividir as músicas em quatro quadrantes:
 
-* **Quais características definem uma boa música para dançar?**
-* **Quais características aparecem em músicas adequadas para relaxamento?**
-* **É possível criar uma playlist para exercícios utilizando apenas dados musicais?**
-* **Como criar playlists que mantenham um determinado humor sem deixar as músicas excessivamente semelhantes?**
-* **Como a diversidade musical pode ser incorporada ao sistema de recomendação?**
-* **Uma playlist pode combinar músicas de diferentes gêneros mantendo características sonoras semelhantes?**
-* **O sistema consegue adaptar as recomendações ao contexto escolhido pelo usuário?**
+- **Animado 🟡:** energia alta e valência alta;
+- **Intenso 🔴:** energia alta e valência baixa;
+- **Triste 🔵:** energia baixa e valência baixa;
+- **Relaxado 🟢:** energia baixa e valência alta.
+
+A classificação encontrada no dataset é:
+
+| Humor | Quantidade de músicas |
+|---|---|
+| Animado | 33.220 |
+| Intenso | 30.211 |
+| Triste | 19.030 |
+| Relaxado | 7.279 |
+
+### Energia e valência são suficientes para representar o humor?
+
+Elas são suficientes para criar uma classificação operacional simples, como a utilizada no projeto, mas não representam toda a complexidade emocional de uma música.
+
+Letra, contexto cultural, tonalidade, instrumentação e percepção individual também podem influenciar o humor percebido.
+
+Portanto, o resultado deve ser apresentado como uma aproximação baseada em dados acústicos.
+
+### Como criar playlists para contextos específicos?
+
+O sistema combina:
+
+- gênero;
+- humor;
+- nível de energia;
+- popularidade;
+- filtro de conteúdo explícito;
+- diversidade de artistas.
+
+Esses filtros permitem criar playlists direcionadas, como samba animado, músicas relaxadas ou playlists sem conteúdo explícito.
 
 ---
+
+## 3. Recomendação e Inteligência Artificial
+
+### É possível recomendar músicas apenas pelas características sonoras?
+
+Sim. O SpotData representa cada música utilizando oito características:
+
+- danceability;
+- energy;
+- speechiness;
+- acousticness;
+- instrumentalness;
+- liveness;
+- valence;
+- tempo.
+
+As características são normalizadas com `StandardScaler` e comparadas utilizando similaridade de cossenos.
+
+O resultado é um recomendador baseado em conteúdo, capaz de encontrar músicas com perfis acústicos semelhantes.
+
+### Quais características influenciam a similaridade?
+
+Atualmente, as oito características possuem a mesma importância após a padronização.
+
+O sistema ainda não aprende pesos personalizados. Portanto, não é possível afirmar que uma característica específica seja mais importante para os usuários.
+
+### A Cosine Similarity (similaridade do cosseno) é adequada para esse dataset?
+
+Ela é adequada como algoritmo inicial porque:
+
+- trabalha com vetores numéricos;
+- compara o perfil acústico das músicas;
+- é rápida para aproximadamente 90 mil faixas;
+- não exige histórico prévio de usuários;
+- permite recomendações para músicas pouco conhecidas.
+
+Entretanto, a relevância subjetiva das recomendações ainda precisaria ser validada com usuários reais.
+
+### O sistema recomenda músicas pouco populares?
+
+Sim. A popularidade não participa diretamente do cálculo de similaridade.
+
+Uma música pouco popular pode ser recomendada quando suas características acústicas forem semelhantes às da referência ou às favoritas do usuário.
+
+A popularidade é utilizada apenas como critério auxiliar de ordenação.
+
+### Como o perfil das favoritas representa o usuário?
+
+O sistema calcula a média dos vetores acústicos das músicas favoritas.
+
+Esse vetor médio funciona como uma representação inicial das preferências sonoras do usuário. Quanto mais coerentes forem as favoritas, mais representativo tende a ser o perfil.
+
+Caso o usuário possua gostos muito diferentes, um único vetor médio pode não representar adequadamente todos os seus interesses.
+
+### Recomendações por perfil são diferentes das recomendações por uma música?
+
+Sim.
+
+Na recomendação por música, o sistema compara o catálogo com uma única faixa de referência.
+
+Na recomendação por perfil, ele compara o catálogo com o vetor médio de todas as favoritas. Dessa forma, o resultado tenta representar o conjunto de preferências do usuário.
+
+### Como o sistema equilibra similaridade e diversidade?
+
+Nas recomendações por similaridade, o sistema permite no máximo uma música por artista.
+
+Nas playlists, permite no máximo duas músicas por artista.
+
+Essa regra evita listas dominadas pelo mesmo artista.
+
+### É possível criar recomendações personalizadas apenas com o dataset?
+
+Sim, utilizando recomendação baseada em conteúdo.
+
+O usuário seleciona músicas favoritas, a API envia os `track_id` para o backend e o Python calcula um perfil acústico. O sistema então procura músicas semelhantes no catálogo.
+
+Essa abordagem personaliza pelo conteúdo, mas ainda não utiliza comportamento coletivo de outros usuários.
+
+---
+
+## 4. Contexto e Experiência
+
+### Como manter um humor sem deixar a playlist excessivamente repetitiva?
+
+O sistema permite filtrar as músicas pelo mesmo humor e aplica limites por artista.
+
+Isso ajuda a manter uma característica emocional comum sem preencher toda a playlist com músicas do mesmo artista.
+
+A diversidade acústica entre as próprias faixas ainda não é calculada diretamente.
+
+### Como a diversidade musical é incorporada?
+
+Atualmente, a diversidade é aplicada por meio de limites de músicas por artista:
+
+- uma música por artista nas recomendações;
+- até duas músicas por artista nas playlists.
+
+### Uma playlist pode combinar gêneros diferentes mantendo características sonoras semelhantes?
+
+Sim. O recomendador por similaridade não exige que as músicas pertençam ao mesmo gênero.
+
+Isso permite encontrar músicas de gêneros diferentes que compartilham características como energia, valência, ritmo, acústica e dançabilidade.
+
+### O sistema adapta as recomendações ao contexto escolhido?
+
+Parcialmente.
+
+O usuário pode escolher:
+
+- gênero;
+- humor;
+- exclusão de conteúdo explícito;
+- uma música de referência;
+- um conjunto de músicas favoritas.
+
+Essas escolhas alteram dinamicamente os resultados consultados pela API.
 
 # 🎯 Objetivos
 
