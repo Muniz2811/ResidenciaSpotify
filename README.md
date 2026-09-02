@@ -486,77 +486,60 @@ Durante os testes realizados, o motor de recomendação conseguiu comparar a mú
 
 ---
 
-# 🚀 Como Executar
+## 🚀 Como executar
 
-## 1. Clonar o repositório
+### 1. Clonar o repositório
 
 ```bash
 git clone https://github.com/Muniz2811/ResidenciaSpotify.git
-```
-
-Acesse a pasta da aplicação:
-
-```bash
 cd ResidenciaSpotify/ricardo
 ```
 
----
+### 2. Criar e ativar um ambiente virtual
 
-## 2. Criar um ambiente virtual
+#### Windows — PowerShell
 
-### Windows
-
-```bash
+```powershell
 python -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
 
-Ative o ambiente:
-
-```bash
-.\venv\Scripts\activate
-```
-
-### Linux / macOS
+#### Linux / macOS
 
 ```bash
 python3 -m venv venv
-```
-
-Ative o ambiente:
-
-```bash
 source venv/bin/activate
 ```
 
----
+### 3. Instalar as dependências
 
-## 3. Instalar as dependências
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 4. Executar o backend
+Com o ambiente virtual ativado:
 
 ```bash
-python main.py
+python -m pip install -r requirements.txt
 ```
 
----
+As principais dependências são `pandas`, `numpy`, `scikit-learn`, `FastAPI` e `Uvicorn`.
 
-## 5. Executar o frontend
+### 4. Executar a aplicação
 
-A interface está disponível no arquivo:
+O Uvicorn inicia a API Python e disponibiliza o frontend integrado:
 
-```text
-frontend_spotify.html
+```bash
+python -m uvicorn api:app --reload
 ```
 
-O arquivo pode ser aberto diretamente em um navegador ou executado utilizando uma extensão como **Live Server**.
+Mantenha o terminal aberto enquanto estiver usando a aplicação.
 
----
+### 5. Acessar o frontend
+
+Abra no navegador:
+
+[http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+A documentação interativa da API está disponível em:
+
+[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 # 🤝 Equipe e Metodologia
 
