@@ -62,7 +62,7 @@ ricardo/
 ├── api.py                    ← API FastAPI e servidor do frontend
 ├── main.py                   ← Ponto de entrada — execute: python main.py
 ├── frontend_spotify.html     ← Estrutura e estilos da interface
-├── frontend_spotify.js       ← Chamadas fetch e estado das favoritas
+├── frontend_spotify.js       ← API, player, favoritas, capas e playlists locais
 ├── dataset_clean.csv         ← Dataset limpo (89.740 músicas × 34 colunas)
 ├── requirements.txt          ← Dependências Python
 ├── README.md                 ← Este arquivo
@@ -70,9 +70,8 @@ ricardo/
     ├── __init__.py
     ├── dados.py              ← Carrega o dataset (compartilhado por todos)
     ├── top5.py               ← Módulo 1: Top 5 músicas por popularidade
-    ├── recomendador.py       ← Módulos 2 e 5: Cosine Similarity + Perfil
-    ├── playlist.py           ← Módulo 3: Playlist por gênero e humor
-    └── podcasts.py           ← Módulo 4: Faixas longas > 20 min
+    ├── recomendador.py       ← Módulos 2 e 4: Cosine Similarity + Perfil
+    └── playlist.py           ← Módulo 3: Playlist por gênero e humor
 ```
 
 ---
@@ -98,7 +97,8 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 pip install -r requirements.txt
 ```
 
-As dependências são: `pandas`, `numpy` e `scikit-learn`.
+As principais dependências são: `pandas`, `numpy`, `scikit-learn`, `FastAPI`
+e `Uvicorn`.
 
 ### 3. Executar o projeto completo com frontend integrado
 
@@ -120,7 +120,6 @@ demonstração no terminal.
 python -m spotify.top5
 python -m spotify.recomendador
 python -m spotify.playlist
-python -m spotify.podcasts
 ```
 
 ### 5. Abrir o frontend
@@ -128,6 +127,22 @@ python -m spotify.podcasts
 Com a API em execução, abra `http://127.0.0.1:8000` no navegador. O frontend
 consulta o catálogo completo, solicita recomendações por faixa e envia as
 favoritas do navegador para o perfil calculado no Python.
+
+A área **Minhas Playlists** permite criar até 20 playlists, adicionar ou
+retirar até 100 músicas de cada uma e recebe 5 recomendações calculadas pelo
+vetor médio das características acústicas da lista. Playlists e favoritas ficam
+no `localStorage`, portanto são separadas por navegador e não geram conflito
+entre visitantes de um deploy.
+
+Ao clicar em uma faixa, a aplicação abre o player incorporado oficial do
+Spotify. Essa reprodução usa o `track_id` existente no dataset, requer conexão
+com a internet e pode variar conforme a disponibilidade da música, o país e a
+sessão do usuário no Spotify. Nenhuma credencial do Spotify precisa ser salva
+no frontend para esse modo de reprodução.
+
+As capas são consultadas no oEmbed público do Spotify e mantidas em cache na
+sessão do navegador. Se uma capa não estiver disponível, a interface mantém a
+capa colorida de fallback.
 
 <img width="1912" height="958" alt="Captura de tela 2026-08-30 183739" src="https://github.com/user-attachments/assets/5e284c61-91f9-4fc5-a452-0a574adce044" />
 
@@ -140,8 +155,8 @@ favoritas do navegador para o perfil calculado no Python.
 | `top5.py` | Top 5 músicas mais populares (global e por gênero) | Ordenação por popularidade |
 | `recomendador.py` | Músicas com perfil sonoro similar | Cosine Similarity (8 features) |
 | `recomendador.py` | Recomendações pelo perfil do usuário | Vetor médio das favoritas |
+| `recomendador.py` | 5 recomendações para cada playlist | Vetor médio da playlist + Cosine Similarity |
 | `playlist.py` | Playlist filtrada por gênero e humor | Filtro + diversidade de artistas |
-| `podcasts.py` | Faixas longas e podcasts | Duração > 20 min + speechiness |
 
 ---
 
@@ -150,7 +165,7 @@ favoritas do navegador para o perfil calculado no Python.
 - **Original:** 114.000 linhas × 21 colunas
 - **Após limpeza:** 89.740 músicas únicas × 34 colunas
 - **Gêneros:** 114
-- **Novas colunas:** `duration_min`, `mood`, `is_podcast`, `is_explicit`, `genre_main`, `all_genres`, 8 features `_scaled`
+- **Novas colunas:** `duration_min`, `mood`, `is_explicit`, `genre_main`, `all_genres`, 8 features `_scaled`
 
 ### Features usadas no recomendador
 
@@ -165,8 +180,8 @@ Todas normalizadas com **StandardScaler** antes da comparação por cosseno.
 | Fase | Descrição | Resultado |
 |------|-----------|-----------|
 | Fase 1 | Limpeza e preparação dos dados | 114k → 89.740 músicas, 0 nulos, 0 duplicatas |
-| Fase 2 | Motor de recomendação com IA | 5 módulos, Cosine Similarity em 7ms |
-| Fase 3 | Frontend estilo Spotify | 5 seções, busca em tempo real, filtros |
+| Fase 2 | Motor de recomendação com IA | 4 módulos, Cosine Similarity em 7ms |
+| Fase 3 | Frontend estilo Spotify | Player, busca, capas reais e múltiplas playlists |
 | Fase 4 | Integração e validação final | Todos módulos validados, README, documentação |
 
 ---

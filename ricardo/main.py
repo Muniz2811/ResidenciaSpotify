@@ -15,7 +15,6 @@ from spotify.dados import load_data
 from spotify.top5 import get_top5
 from spotify.recomendador import search_track, recommend_similar, get_user_profile_recommendations
 from spotify.playlist import build_playlist
-from spotify.podcasts import get_podcasts
 
 def main():
     # ── Carregar dataset ──
@@ -57,15 +56,7 @@ def main():
     for i, row in pl.iterrows():
         print(f"  {i+1:2d}. [{row['popularity']:3d}] {row['track_name'][:35]:<35} | energy={row['energy']:.2f}")
 
-    # ── MÓDULO 4: PODCASTS ──
-    print(f"\n{sep}")
-    print("  🎙️  PODCASTS / FAIXAS LONGAS")
-    print(sep)
-    pods = get_podcasts(n=5)
-    for i, row in pods.iterrows():
-        print(f"  {i+1}. {row['duration_min']:6.1f}min | {row['track_name'][:35]:<35} | {row['artists'][:20]}")
-
-    # ── MÓDULO 5: PERFIL DO USUÁRIO ──
+    # ── MÓDULO 4: PERFIL DO USUÁRIO ──
     print(f"\n{sep}")
     print("  👤 PERFIL DO USUÁRIO — Sua Biblioteca")
     print(sep)

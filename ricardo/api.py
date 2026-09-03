@@ -17,9 +17,9 @@ from pydantic import BaseModel, Field
 
 from spotify.dados import get_df, load_data
 from spotify.playlist import build_playlist
-from spotify.podcasts import get_podcasts
 from spotify.recomendador import (
     get_user_profile_recommendations,
+    recommend_from_tracks,
     recommend_similar,
     search_track,
 )
@@ -79,6 +79,11 @@ class ProfileRequest(BaseModel):
     exclude_explicit: bool = False
 
 
+class PlaylistRecommendationRequest(BaseModel):
+    track_ids: list[str] = Field(min_length=1, max_length=100)
+    exclude_explicit: bool = False
+
+
 @app.get("/", include_in_schema=False)
 def frontend():
     return FileResponse(FRONTEND_PATH)
@@ -100,7 +105,6 @@ def stats():
     return {
         "tracks": len(df),
         "genres": int(df["track_genre"].nunique()),
-        "podcasts": int(df["is_podcast"].sum()),
         "moods": {key: int(value) for key, value in df["mood"].value_counts().items()},
         "genre_counts": {
             genre: int((df["genre_main"] == genre).sum())
@@ -127,15 +131,6 @@ def playlist(
     selected_mood = None if mood in (None, "", "todos") else mood
     result = build_playlist(genre, selected_mood, n, exclude_explicit)
     return dataframe_records(result)
-
-
-@app.get("/api/podcasts")
-def podcasts(
-    min_duration: int = Query(default=20, ge=0),
-    genre: str | None = None,
-    n: int = Query(default=20, ge=1, le=100),
-):
-    return dataframe_records(get_podcasts(min_duration, genre, n))
 
 
 @app.get("/api/tracks/search")
@@ -174,5 +169,23 @@ def profile_recommendations(payload: ProfileRequest):
 
     return {
         "favorite_count": len(indices),
+        "recommendations": dataframe_records(recommendations),
+    }
+
+
+@app.post("/api/recommendations/playlist")
+def playlist_recommendations(payload: PlaylistRecommendationRequest):
+    """Recomenda cinco músicas pelo vetor médio das faixas da playlist."""
+    unique_ids = list(dict.fromkeys(payload.track_ids))
+    indices = [track_index(track_id) for track_id in unique_ids]
+    try:
+        recommendations = recommend_from_tracks(
+            indices, n=5, exclude_explicit=payload.exclude_explicit
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return {
+        "playlist_track_count": len(indices),
         "recommendations": dataframe_records(recommendations),
     }
