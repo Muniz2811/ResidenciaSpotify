@@ -1,6 +1,4 @@
-"""
-Módulos 2 e 5 — Recomendador por similaridade e por perfil do usuário.
-"""
+"""Módulos 2 e 4 — recomendação por faixa, perfil e playlists."""
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from .dados import get_df, get_matrix
@@ -112,13 +110,12 @@ def recommend_similar(track_index, n=10, exclude_explicit=False, same_mood=False
     )
 
 
-def get_user_profile_recommendations(favorite_tracks_indices, n=10, exclude_explicit=False):
+def recommend_from_tracks(track_indices, n=10, exclude_explicit=False):
     """
-    Recomendações baseadas no perfil do usuário (média das músicas favoritas).
-    Estilo 'Sua Biblioteca' do Spotify.
+    Recomenda a partir do vetor médio de um conjunto de músicas.
 
     Parâmetros:
-        favorite_tracks_indices (list): lista de índices das músicas favoritas
+        track_indices (list): índices das músicas que formam o perfil
         n (int): número de recomendações
         exclude_explicit (bool): remove conteúdo explícito
 
@@ -128,21 +125,26 @@ def get_user_profile_recommendations(favorite_tracks_indices, n=10, exclude_expl
     df = get_df()
     matrix = get_matrix()
 
-    favorite_tracks_indices = list(dict.fromkeys(favorite_tracks_indices))
-    if not favorite_tracks_indices:
-        raise ValueError("Selecione ao menos uma música favorita.")
-    invalid = [index for index in favorite_tracks_indices if index not in df.index]
+    track_indices = list(dict.fromkeys(track_indices))
+    if not track_indices:
+        raise ValueError("Selecione ao menos uma música.")
+    invalid = [index for index in track_indices if index not in df.index]
     if invalid:
         raise ValueError(f"Índices de faixas inválidos: {invalid}")
     if n < 1:
         raise ValueError("O número de recomendações deve ser positivo.")
 
-    user_vector = matrix[favorite_tracks_indices].mean(axis=0).reshape(1, -1)
-    sims = cosine_similarity(user_vector, matrix)[0]
+    group_vector = matrix[track_indices].mean(axis=0).reshape(1, -1)
+    sims = cosine_similarity(group_vector, matrix)[0]
 
     return _select_diverse(
-        df, sims, favorite_tracks_indices, n, exclude_explicit
+        df, sims, track_indices, n, exclude_explicit
     )
+
+
+def get_user_profile_recommendations(favorite_tracks_indices, n=10, exclude_explicit=False):
+    """Mantém a API do perfil e reutiliza o recomendador por conjunto."""
+    return recommend_from_tracks(favorite_tracks_indices, n, exclude_explicit)
 
 
 if __name__ == '__main__':
