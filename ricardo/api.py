@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from spotify.dados import get_df, load_data
 from spotify.playlist import build_playlist
 from spotify.recomendador import (
+    explain_recommendations,
     get_user_profile_recommendations,
     recommend_from_tracks,
     recommend_similar,
@@ -153,6 +154,7 @@ def track_recommendations(
     return {
         "reference": track_record(index),
         "recommendations": dataframe_records(recommendations),
+        "explanation": explain_recommendations([index], recommendations),
     }
 
 
@@ -170,6 +172,7 @@ def profile_recommendations(payload: ProfileRequest):
     return {
         "favorite_count": len(indices),
         "recommendations": dataframe_records(recommendations),
+        "explanation": explain_recommendations(indices, recommendations),
     }
 
 
@@ -188,4 +191,5 @@ def playlist_recommendations(payload: PlaylistRecommendationRequest):
     return {
         "playlist_track_count": len(indices),
         "recommendations": dataframe_records(recommendations),
+        "explanation": explain_recommendations(indices, recommendations),
     }

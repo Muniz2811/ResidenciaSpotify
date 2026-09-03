@@ -5,6 +5,7 @@ const FAVORITES_KEY = "spotdata-favorites-v1";
 const PLAYLISTS_KEY = "spotdata-playlists-v1";
 const ACTIVE_PLAYLIST_KEY = "spotdata-active-playlist-v1";
 const DATA = { top5: [], moods: {}, recs: [], recRefs: [] };
+const EXPLANATIONS = { track: null, profile: null, playlist: null };
 const TRACKS = new Map();
 const ARTWORK = new Map();
 const ARTWORK_PENDING = new Set();
@@ -19,6 +20,8 @@ let searchSequence = 0;
 let playlistSearchTimer = null;
 let playlistSearchSequence = 0;
 let playlistRecommendationSequence = 0;
+let profileRecommendationSequence = 0;
+let similarRecommendationSequence = 0;
 let genreBrowseSequence = 0;
 let artworkTimer = null;
 let toastTimer = null;
@@ -225,6 +228,147 @@ function showError(elementId, error) {
   document.getElementById(elementId).innerHTML = `<div class="empty-state" style="color:#ff8c8c">${escapeHtml(error.message)}</div>`;
 }
 
+function setExplanation(context, explanation = null) {
+  EXPLANATIONS[context] = explanation;
+  const button = document.getElementById(`explain-${context}-btn`);
+  if (button) button.disabled = !explanation?.recommendations?.length;
+}
+
+function vectorBar(value, y, color, center, scale) {
+  const width = Math.abs(value) * scale;
+  const x = value < 0 ? center - width : center;
+  return `<rect x="${x.toFixed(2)}" y="${y}" width="${width.toFixed(2)}" height="8" rx="3" fill="${color}"/>`;
+}
+
+function vectorChart(explanation, recommendation) {
+  const source = explanation.source_vector;
+  const candidate = recommendation.vector;
+  const maxAbs = Math.max(1, ...source.map(Math.abs), ...candidate.map(Math.abs));
+  const center = 430;
+  const scale = 220 / maxAbs;
+  const rows = explanation.features.map((feature, index) => {
+    const y = 36 + index * 34;
+    return `<text x="8" y="${y + 12}" fill="#b3b3b3" font-size="11">${escapeHtml(feature.label)}</text>
+      <line x1="210" y1="${y + 10}" x2="650" y2="${y + 10}" stroke="#333" stroke-width="1"/>
+      ${vectorBar(source[index], y + 1, "#1db954", center, scale)}
+      ${vectorBar(candidate[index], y + 12, "#7b9ef4", center, scale)}
+      <text x="666" y="${y + 9}" fill="#1db954" font-size="10">${source[index].toFixed(2)}</text>
+      <text x="716" y="${y + 20}" fill="#9fb6ff" font-size="10">${candidate[index].toFixed(2)}</text>`;
+  }).join("");
+  return `<svg class="vector-chart" viewBox="0 0 760 315" role="img" aria-label="Comparação dos vetores normalizados">
+    <text x="210" y="16" fill="#6a6a6a" font-size="10">-${maxAbs.toFixed(1)}</text>
+    <text x="426" y="16" fill="#6a6a6a" font-size="10">0</text>
+    <text x="630" y="16" fill="#6a6a6a" font-size="10">+${maxAbs.toFixed(1)}</text>
+    <line x1="${center}" y1="23" x2="${center}" y2="304" stroke="#777" stroke-width="1"/>
+    ${rows}
+  </svg>`;
+}
+
+function angleChart(similarity) {
+  const safeSimilarity = Math.max(-1, Math.min(1, similarity));
+  const angle = Math.acos(safeSimilarity);
+  const degrees = angle * 180 / Math.PI;
+  const originX = 160;
+  const originY = 175;
+  const radius = 112;
+  const candidateX = originX + radius * Math.cos(angle);
+  const candidateY = originY - radius * Math.sin(angle);
+  return `<svg class="angle-chart" viewBox="0 0 320 225" role="img" aria-label="Ângulo equivalente entre os vetores">
+    <defs>
+      <marker id="vector-arrow-source" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#1db954"/></marker>
+      <marker id="vector-arrow-candidate" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#7b9ef4"/></marker>
+    </defs>
+    <circle cx="${originX}" cy="${originY}" r="3" fill="#fff"/>
+    <line x1="${originX}" y1="${originY}" x2="${originX + radius}" y2="${originY}" stroke="#1db954" stroke-width="5" marker-end="url(#vector-arrow-source)"/>
+    <line x1="${originX}" y1="${originY}" x2="${candidateX.toFixed(2)}" y2="${candidateY.toFixed(2)}" stroke="#7b9ef4" stroke-width="5" marker-end="url(#vector-arrow-candidate)"/>
+    <path d="M ${originX + 43} ${originY} A 43 43 0 ${degrees > 180 ? 1 : 0} 0 ${(originX + 43 * Math.cos(angle)).toFixed(2)} ${(originY - 43 * Math.sin(angle)).toFixed(2)}" fill="none" stroke="#fff" stroke-dasharray="3 3"/>
+    <text x="12" y="22" fill="#fff" font-size="14" font-weight="700">θ = ${degrees.toFixed(1)}°</text>
+    <text x="12" y="43" fill="#1db954" font-size="13">cos(θ) = ${(similarity * 100).toFixed(2)}%</text>
+    <text x="205" y="202" fill="#1db954" font-size="10">vetor-base</text>
+    <text x="${Math.max(8, Math.min(235, candidateX - 25)).toFixed(2)}" y="${Math.max(62, candidateY - 10).toFixed(2)}" fill="#9fb6ff" font-size="10">recomendada</text>
+  </svg>`;
+}
+
+function renderRecommendationExplanation(context, recommendationIndex = 0) {
+  const explanation = EXPLANATIONS[context];
+  if (!explanation?.recommendations?.length) return;
+  const recommendation = explanation.recommendations[recommendationIndex] || explanation.recommendations[0];
+  const sourceCount = explanation.source_count;
+  const contextLabels = {
+    track: ["Recomendação por música", "O vetor-base é a própria música escolhida."],
+    profile: ["Recomendação pelo seu perfil", `O vetor-base é a média de ${sourceCount} favorita${sourceCount === 1 ? "" : "s"}.`],
+    playlist: ["Recomendação para a playlist", `O vetor-base é a média das ${sourceCount} música${sourceCount === 1 ? "" : "s"} da playlist.`],
+  };
+  document.getElementById("explanation-title").textContent = contextLabels[context][0];
+  document.getElementById("explanation-subtitle").textContent = contextLabels[context][1];
+
+  const options = explanation.recommendations.map((track, index) =>
+    `<option value="${index}" ${index === recommendationIndex ? "selected" : ""}>${index + 1}. ${escapeHtml(track.track_name)} — ${escapeHtml(track.artists.split(";")[0])}</option>`
+  ).join("");
+  const sourceNames = explanation.source_tracks.slice(0, 6).map(track => escapeHtml(track.track_name)).join(" · ");
+  const remainingSources = Math.max(0, explanation.source_tracks.length - 6);
+  const sourceFormula = sourceCount === 1
+    ? "vetor-base[j] = valor padronizado da música de referência"
+    : `vetor-base[j] = soma[j] ÷ ${sourceCount}`;
+  const rows = explanation.features.map((feature, index) => `<tr>
+    <td>${escapeHtml(feature.label)}</td>
+    <td>${explanation.component_sums[index].toFixed(4)}</td>
+    <td>${explanation.source_vector[index].toFixed(4)}</td>
+    <td>${recommendation.vector[index].toFixed(4)}</td>
+    <td>${recommendation.component_products[index].toFixed(4)}</td>
+  </tr>`).join("");
+
+  document.getElementById("explanation-content").innerHTML = `
+    <div class="explanation-intro">
+      <div class="explanation-step"><div class="explanation-step-number">1</div><strong>Padronização</strong><p>Cada atributo vira um z-score: quantos desvios-padrão está acima ou abaixo da média do catálogo.</p></div>
+      <div class="explanation-step"><div class="explanation-step-number">2</div><strong>Vetor-base</strong><p>${sourceCount === 1 ? "Usamos os oito atributos da música escolhida." : `Somamos cada atributo das ${sourceCount} músicas e dividimos por ${sourceCount}.`}</p></div>
+      <div class="explanation-step"><div class="explanation-step-number">3</div><strong>Cosseno</strong><p>Comparamos a direção do vetor-base com cada música. Quanto menor o ângulo, maior a similaridade.</p></div>
+    </div>
+    <div class="formula-box">z = (valor − média do catálogo) ÷ desvio-padrão<br>${sourceFormula}<br>cos(θ) = (vetor-base · música) ÷ (||vetor-base|| × ||música||)</div>
+    <div class="explanation-note"><strong>Origem do vetor:</strong> ${sourceNames}${remainingSources ? ` · e mais ${remainingSources}` : ""}.</div>
+    <label for="explanation-recommendation" style="font-size:12px;color:var(--text2)">Compare o vetor-base com uma recomendação:</label>
+    <select class="explanation-selector" id="explanation-recommendation" onchange="renderRecommendationExplanation('${context}',Number(this.value))">${options}</select>
+    <div class="explanation-grid">
+      <div class="explanation-panel">
+        <div class="explanation-panel-title">Vetores padronizados por atributo</div>
+        <div class="explanation-panel-sub">Valores positivos estão acima da média do catálogo; negativos, abaixo. A escala se ajusta ao maior valor exibido.</div>
+        ${vectorChart(explanation, recommendation)}
+        <div class="chart-legend"><span class="source">Vetor-base</span><span class="candidate">${escapeHtml(recommendation.track_name)}</span></div>
+      </div>
+      <div class="explanation-panel">
+        <div class="explanation-panel-title">Ângulo equivalente</div>
+        <div class="explanation-panel-sub">Representação bidimensional do ângulo calculado entre os vetores de oito dimensões.</div>
+        ${angleChart(recommendation.similarity)}
+      </div>
+    </div>
+    <div class="calculation-summary">
+      <div class="calculation-stat"><span>Produto escalar</span><strong>${recommendation.dot_product.toFixed(4)}</strong></div>
+      <div class="calculation-stat"><span>Norma da base</span><strong>${recommendation.source_norm.toFixed(4)}</strong></div>
+      <div class="calculation-stat"><span>Norma da música</span><strong>${recommendation.candidate_norm.toFixed(4)}</strong></div>
+      <div class="calculation-stat"><span>Similaridade</span><strong>${(recommendation.similarity * 100).toFixed(2)}%</strong></div>
+    </div>
+    <div class="formula-box">cos(θ) = ${recommendation.dot_product.toFixed(4)} ÷ (${recommendation.source_norm.toFixed(4)} × ${recommendation.candidate_norm.toFixed(4)}) = ${recommendation.similarity.toFixed(4)}</div>
+    <div class="explanation-panel-title" style="margin:18px 0 8px">Cálculo componente a componente</div>
+    <div class="explanation-table-wrap"><table class="explanation-table">
+      <thead><tr><th>Atributo</th><th>Soma na origem</th><th>Vetor-base (média)</th><th>Recomendada</th><th>Produto</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <p class="explanation-note">A soma da última coluna é o produto escalar. O ranking considera a similaridade com precisão total; a interface arredonda os valores apenas para facilitar a leitura. Depois, o sistema limita o resultado a uma música por artista e usa popularidade somente como desempate.</p>`;
+}
+
+function openRecommendationExplanation(context) {
+  if (!EXPLANATIONS[context]?.recommendations?.length) {
+    showToast("Gere as recomendações primeiro");
+    return;
+  }
+  renderRecommendationExplanation(context);
+  document.getElementById("recommendation-explanation-dialog").showModal();
+}
+
+function closeRecommendationExplanation() {
+  document.getElementById("recommendation-explanation-dialog").close();
+}
+
 function setApiStatus(message, error = false) {
   const status = document.getElementById("api-status");
   status.textContent = message;
@@ -403,9 +547,11 @@ async function loadPlaylistRecommendations() {
   const element = document.getElementById("playlist-recommendations");
   const sequence = ++playlistRecommendationSequence;
   if (!active?.tracks.length) {
+    setExplanation("playlist");
     element.innerHTML = '<div class="empty-state">Adicione ao menos uma música para gerar recomendações.</div>';
     return;
   }
+  setExplanation("playlist");
   loading("playlist-recommendations", "Calculando recomendações da playlist…");
   try {
     const result = await apiFetch("/recommendations/playlist", {
@@ -414,6 +560,7 @@ async function loadPlaylistRecommendations() {
     });
     if (sequence !== playlistRecommendationSequence || active.id !== activePlaylistId) return;
     renderList("playlist-recommendations", result.recommendations, true, "Nenhuma recomendação encontrada.");
+    setExplanation("playlist", result.explanation);
   } catch (error) {
     if (sequence === playlistRecommendationSequence) showError("playlist-recommendations", error);
   }
@@ -490,6 +637,7 @@ function playActivePlaylist() {
 
 async function loadSimilar(track) {
   if (!track) return;
+  const sequence = ++similarRecommendationSequence;
   const discoverNav = document.querySelectorAll(".nav-item")[1];
   goTo("discover", discoverNav);
   document.getElementById("ref-name").textContent = track.track_name;
@@ -500,13 +648,16 @@ async function loadSimilar(track) {
   referenceCover.style.setProperty("--cover-hue", coverHue(track.track_id));
   referenceCover.innerHTML = '<span>♫</span><img alt="" hidden>';
   queueArtwork([track]);
+  setExplanation("track");
   loading("rec-list", "Calculando similaridade no Python…");
   try {
     const result = await apiFetch(`/tracks/${encodeURIComponent(track.track_id)}/recommendations?n=12`);
+    if (sequence !== similarRecommendationSequence) return;
     DATA.recs = registerTracks(result.recommendations);
     renderList("rec-list", result.recommendations, true);
+    setExplanation("track", result.explanation);
   } catch (error) {
-    showError("rec-list", error);
+    if (sequence === similarRecommendationSequence) showError("rec-list", error);
   }
 }
 
@@ -558,6 +709,8 @@ function toggleFavorite(track) {
   else favorites.set(track.track_id, compactTrack(track));
   saveFavorites();
   updateFavoriteUi();
+  profileRecommendationSequence += 1;
+  setExplanation("profile");
   showToast(wasFavorite ? "Removida das favoritas" : "Adicionada às favoritas");
   document.getElementById("profile-rec-list").innerHTML = '<div class="empty-state">Perfil alterado. Recalcule as recomendações.</div>';
 }
@@ -582,20 +735,25 @@ function renderFavorites() {
 
 async function generateProfileRecommendations() {
   goTo("profile", document.querySelectorAll(".nav-item")[3]);
+  const sequence = ++profileRecommendationSequence;
   const ids = [...favorites.keys()];
   if (!ids.length) {
+    setExplanation("profile");
     document.getElementById("profile-rec-list").innerHTML = '<div class="empty-state">Selecione ao menos uma favorita.</div>';
     return;
   }
+  setExplanation("profile");
   loading("profile-rec-list", "Recalculando seu perfil no Python…");
   try {
     const result = await apiFetch("/recommendations/profile", {
       method: "POST",
       body: JSON.stringify({ favorite_track_ids: ids, n: 20, exclude_explicit: false }),
     });
+    if (sequence !== profileRecommendationSequence) return;
     renderList("profile-rec-list", result.recommendations, true);
+    setExplanation("profile", result.explanation);
   } catch (error) {
-    showError("profile-rec-list", error);
+    if (sequence === profileRecommendationSequence) showError("profile-rec-list", error);
   }
 }
 
@@ -603,6 +761,8 @@ function clearFavorites() {
   favorites.clear();
   saveFavorites();
   updateFavoriteUi();
+  profileRecommendationSequence += 1;
+  setExplanation("profile");
   document.getElementById("profile-rec-list").innerHTML = '<div class="empty-state">Selecione favoritas para começar.</div>';
 }
 

@@ -1,13 +1,76 @@
 """Módulos 2 e 4 — recomendação por faixa, perfil e playlists."""
+import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-from .dados import get_df, get_matrix
+from .dados import FEATURES_SCALED, get_df, get_matrix
 
 
 RESULT_COLUMNS = [
     'track_id', 'track_name', 'artists', 'similarity', 'popularity',
     'mood', 'genre_main', 'duration_min', 'is_explicit'
 ]
+
+FEATURE_LABELS = {
+    'danceability_scaled': 'Dançabilidade',
+    'energy_scaled': 'Energia',
+    'speechiness_scaled': 'Fala',
+    'acousticness_scaled': 'Acústica',
+    'instrumentalness_scaled': 'Instrumentalidade',
+    'liveness_scaled': 'Ao vivo',
+    'valence_scaled': 'Valência',
+    'tempo_scaled': 'Andamento',
+}
+
+
+def _rounded_vector(vector):
+    """Converte um vetor NumPy em números JSON seguros e legíveis."""
+    return [round(float(value), 6) for value in vector]
+
+
+def explain_recommendations(source_indices, recommendations):
+    """Expõe os mesmos vetores e operações usados pela similaridade de cossenos."""
+    df = get_df()
+    matrix = get_matrix()
+    source_indices = list(dict.fromkeys(source_indices))
+    source_matrix = matrix[source_indices]
+    source_vector = source_matrix.mean(axis=0)
+    source_norm = float(np.linalg.norm(source_vector))
+    track_index_by_id = pd.Series(df.index, index=df['track_id']).to_dict()
+
+    explained_recommendations = []
+    for row in recommendations.itertuples(index=False):
+        candidate_index = track_index_by_id[row.track_id]
+        candidate_vector = matrix[candidate_index]
+        candidate_norm = float(np.linalg.norm(candidate_vector))
+        dot_product = float(np.dot(source_vector, candidate_vector))
+        denominator = source_norm * candidate_norm
+        similarity = dot_product / denominator if denominator else 0.0
+        explained_recommendations.append({
+            'track_id': row.track_id,
+            'track_name': row.track_name,
+            'artists': row.artists,
+            'vector': _rounded_vector(candidate_vector),
+            'component_products': _rounded_vector(source_vector * candidate_vector),
+            'dot_product': round(dot_product, 6),
+            'source_norm': round(source_norm, 6),
+            'candidate_norm': round(candidate_norm, 6),
+            'denominator': round(denominator, 6),
+            'similarity': round(similarity, 6),
+        })
+
+    source_tracks = df.loc[source_indices, ['track_id', 'track_name', 'artists']]
+    return {
+        'features': [
+            {'key': column.removesuffix('_scaled'), 'label': FEATURE_LABELS[column]}
+            for column in FEATURES_SCALED
+        ],
+        'normalization': 'z-score',
+        'source_count': len(source_indices),
+        'source_tracks': source_tracks.to_dict(orient='records'),
+        'component_sums': _rounded_vector(source_matrix.sum(axis=0)),
+        'source_vector': _rounded_vector(source_vector),
+        'recommendations': explained_recommendations,
+    }
 
 
 def search_track(query, limit=20):
