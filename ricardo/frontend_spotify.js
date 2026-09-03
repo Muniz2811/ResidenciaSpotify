@@ -19,9 +19,9 @@ let searchSequence = 0;
 let playlistSearchTimer = null;
 let playlistSearchSequence = 0;
 let playlistRecommendationSequence = 0;
+let genreBrowseSequence = 0;
 let artworkTimer = null;
 let toastTimer = null;
-let pendingGenre = null;
 let favorites = loadFavorites();
 let userPlaylists = loadUserPlaylists();
 let activePlaylistId = localStorage.getItem(ACTIVE_PLAYLIST_KEY);
@@ -327,7 +327,6 @@ function openPlaylistDialog() {
 
 function closePlaylistDialog() {
   document.getElementById("playlist-dialog").close();
-  pendingGenre = null;
 }
 
 function createPlaylist(event) {
@@ -343,12 +342,9 @@ function createPlaylist(event) {
   userPlaylists.push({ id, name, tracks: [] });
   activePlaylistId = id;
   saveUserPlaylists();
-  const genre = pendingGenre;
-  pendingGenre = null;
   document.getElementById("playlist-dialog").close();
   renderPlaylistManager();
   showToast(`Playlist “${name}” criada`);
-  if (genre) loadGenreSuggestions(genre);
 }
 
 function renameActivePlaylist() {
@@ -458,15 +454,32 @@ async function loadGenreSuggestions(genre) {
   }
 }
 
-function showGenreSuggestions(genre) {
-  goTo("playlist", document.querySelectorAll(".nav-item")[2]);
-  if (!getActivePlaylist()) {
-    pendingGenre = genre;
-    showToast("Crie uma playlist para adicionar sugestões");
-    openPlaylistDialog();
-    return;
+async function browseGenre(genre, element = null) {
+  const genres = {
+    pop: { label: "Pop", icon: "🎵", color: "#5267d8", dark: "#202952" },
+    samba: { label: "Samba", icon: "🥁", color: "#c97818", dark: "#4d2800" },
+    sertanejo: { label: "Sertanejo", icon: "🤠", color: "#9f5d29", dark: "#3f210a" },
+  };
+  const selected = genres[genre];
+  if (!selected) return;
+
+  const sequence = ++genreBrowseSequence;
+  goTo("genre", element);
+  document.getElementById("genre-title").textContent = selected.label;
+  document.getElementById("genre-icon").textContent = selected.icon;
+  document.getElementById("genre-meta").textContent = `Músicas de ${selected.label} em destaque no catálogo do SpotData`;
+  const hero = document.getElementById("genre-hero");
+  hero.style.setProperty("--genre-color", selected.color);
+  hero.style.setProperty("--genre-color-dark", selected.dark);
+  loading("genre-list", `Buscando músicas de ${selected.label}…`);
+
+  try {
+    const tracks = await apiFetch(`/playlist?genre=${encodeURIComponent(genre)}&n=30`);
+    if (sequence !== genreBrowseSequence) return;
+    renderList("genre-list", tracks, false, `Nenhuma música de ${selected.label} encontrada.`);
+  } catch (error) {
+    if (sequence === genreBrowseSequence) showError("genre-list", error);
   }
-  loadGenreSuggestions(genre);
 }
 
 function playActivePlaylist() {
